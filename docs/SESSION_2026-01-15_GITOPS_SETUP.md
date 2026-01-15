@@ -28,61 +28,11 @@ Implementacao bem-sucedida de workflow GitOps para automacao de rede usando:
 
 ## Arquitetura Implementada
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     NETOPS GITOPS ARCHITECTURE                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐    │
-│  │   GitHub     │────▶│   ArgoCD     │────▶│     SDC      │    │
-│  │   (Source)   │     │   (Sync)     │     │  (Delivery)  │    │
-│  └──────────────┘     └──────────────┘     └──────────────┘    │
-│         │                    │                    │             │
-│         │                    │                    │             │
-│         ▼                    ▼                    ▼             │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐    │
-│  │  ConfigSets  │     │  Kubernetes  │     │   gNMI SET   │    │
-│  │   (YAML)     │     │   (CRDs)     │     │  (Protocol)  │    │
-│  └──────────────┘     └──────────────┘     └──────────────┘    │
-│                                                   │             │
-│                                                   ▼             │
-│                              ┌─────────────────────────────┐   │
-│                              │      NETWORK SWITCHES       │   │
-│                              │  ┌─────────┐  ┌─────────┐   │   │
-│                              │  │ Arista  │  │  Nokia  │   │   │
-│                              │  │  cEOS   │  │ SR Linux│   │   │
-│                              │  └─────────┘  └─────────┘   │   │
-│                              └─────────────────────────────┘   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+![NetOps GitOps Architecture](diagrams/session-architecture.png)
 
 ### Fluxo de Dados
 
-```
-1. Developer edita YAML no GitHub
-         │
-         ▼
-2. ArgoCD detecta mudanca (webhook/polling)
-         │
-         ▼
-3. ArgoCD aplica Config CRD no Kubernetes
-         │
-         ▼
-4. SDC config-server le o CRD
-         │
-         ▼
-5. SDC traduz para gNMI SET request
-         │
-         ▼
-6. gNMI aplica configuracao no switch
-         │
-         ▼
-7. Switch confirma aplicacao
-         │
-         ▼
-8. SDC atualiza status do CRD para Ready
-```
+![GitOps Data Flow](diagrams/session-dataflow.png)
 
 ---
 
@@ -295,24 +245,12 @@ O switch `nokia-spine-2` possuia `subinterface 0` em `ethernet-1/1` com IP 10.0.
 
 ### Topologia Apos Migracao
 
-```
-                nokia-spine-1
-               /      |      \
-          e1/1.10  e1/2.0   e1/3.0
-         (VLAN10)  (BGP)    (BGP)
-              |       |        |
-              |   10.0.1.x  10.0.2.x
-              |       |        |
-          e1/1.10  e1/50.1  e1/1.0
-         (VLAN10)  (BGP)    (BGP)
-              |       |        |
-        nokia-leaf-1  |   nokia-leaf-2
-                      |
-               nokia-spine-2
-                  e1/1.1 ← VLAN tag 1 (BGP)
-                  e1/1.10 ← VLAN 10 (SDC)
-                 (10.0.3.0/31)
-```
+![BGP Topology After Migration](diagrams/session-bgp-topology.png)
+
+**Legenda:**
+- **nokia-spine-2** (verde): Switch migrado com VLAN tagging
+- **e1/1.1**: Subinterface VLAN 1 para BGP (10.0.3.0/31)
+- **e1/1.10**: Subinterface VLAN 10 para SDC config
 
 ### Resultado
 
