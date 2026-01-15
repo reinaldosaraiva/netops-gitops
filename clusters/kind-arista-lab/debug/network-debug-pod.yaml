@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: network-debug
+  namespace: sdc
+  labels:
+    app: network-debug
+    purpose: troubleshooting
+spec:
+  containers:
+  - name: netshoot
+    image: nicolaka/netshoot:latest
+    command:
+    - sleep
+    - "infinity"
+    resources:
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+    securityContext:
+      capabilities:
+        add:
+        - NET_ADMIN
+        - NET_RAW
+    env:
+    - name: TERM
+      value: xterm-256color
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 5
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-debug-scripts
+  namespace: sdc
+data:
+  ssh-nokia.sh: |
+    #!/bin/bash
+    # SSH to Nokia SR Linux switches
+    # Usage: ssh-nokia.sh <switch-name>
+    # Example: ssh-nokia.sh spine-1
+
+    SWITCHES="spine-1:172.40.40.11 spine-2:172.40.40.12 leaf-1:172.40.40.21 leaf-2:172.40.40.22"
+
+    if [ -z "$1" ]; then
+      echo "Usage: $0 <switch-name>"
+      echo "Available: spine-1, spine-2, leaf-1, leaf-2"
+      exit 1
+    fi
+
+    for entry in $SWITCHES; do
+      name="${entry%%:*}"
+      ip="${entry##*:}"
+      if [ "$name" = "$1" ]; then
+        echo "Connecting to Nokia $name ($ip)..."
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null admin@$ip
+        exit 0
+      fi
+    done
+
+    echo "Switch $1 not found. Available: spine-1, spine-2, leaf-1, leaf-2"
+    exit 1
+
+  ssh-arista.sh: |
+    #!/bin/bash
+    # SSH to Arista cEOS switches
+    # Usage: ssh-arista.sh <switch-name>
+    # Example: ssh-arista.sh spine-1
+
+    SWITCHES="spine-1:172.20.20.11 leaf-1:172.20.20.21 leaf-2:172.20.20.22"
+
+    if [ -z "$1" ]; then
+      echo "Usage: $0 <switch-name>"
+      echo "Available: spine-1, leaf-1, leaf-2"
+      exit 1
+    fi
+
+    for entry in $SWITCHES; do
+      name="${entry%%:*}"
+      ip="${entry##*:}"
+      if [ "$name" = "$1" ]; then
+        echo "Connecting to Arista $name ($ip)..."
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null admin@$ip
+        exit 0
+      fi
+    done
+
+    echo "Switch $1 not found. Available: spine-1, leaf-1, leaf-2"
+    exit 1
+
+  ping-all.sh: |
+    #!/bin/bash
+    # Ping all switches from debug pod
+
+    echo "=== Nokia Switches ==="
+    for ip in 172.40.40.11 172.40.40.12 172.40.40.21 172.40.40.22; do
+      printf "%-15s: " "$ip"
+      ping -c 1 -W 2 $ip > /dev/null 2>&1 && echo "OK" || echo "FAIL"
+    done
+
+    echo ""
+    echo "=== Arista Switches ==="
+    for ip in 172.20.20.11 172.20.20.21 172.20.20.22; do
+      printf "%-15s: " "$ip"
+      ping -c 1 -W 2 $ip > /dev/null 2>&1 && echo "OK" || echo "FAIL"
+    done
