@@ -1,0 +1,13 @@
+# Secrets (never commit)
+*.secret.yaml
+*-secret.yaml
+secrets/
+
+# Local dev
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/

@@ -1,0 +1,21 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: arista-leaf1-interface-desc
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: leaf-1-arista
+    config.sdcio.dev/targetNamespace: sdc
+spec:
+  priority: 10
+  config:
+  - path: /
+    value:
+      interfaces:
+        interface:
+        - name: Ethernet1
+          config:
+            description: "SDC Managed - Uplink to SPINE-1"
+        - name: Ethernet3
+          config:
+            description: "SDC Managed - Connection to HOST"
