@@ -1,6 +1,6 @@
 # NetOps GitOps Status
 
-**Last Updated:** 2026-01-15 19:35 UTC
+**Last Updated:** 2026-01-15 20:20 UTC
 **Status:** OPERATIONAL
 
 ---
@@ -9,8 +9,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Configs Managed via GitOps | 10 |
+| Resources Managed via GitOps | 12 |
+| SDC Configs (Ready) | 10/10 |
 | SDC Targets (Ready) | 7/7 |
+| Debug Pod | Running (heartbeat logs) |
 | ArgoCD Sync Status | Synced |
 | GitHub Repo | https://github.com/reinaldosaraiva/netops-gitops |
 
@@ -56,6 +58,66 @@ Status: FULL MESH CONNECTIVITY
 ---
 
 ## Recent Changes
+
+### 2026-01-15 (Session 3): Debug Pod + gNMI Subscribe Monitoring
+
+**Summary:**
+- Implemented network debug pod for interactive troubleshooting
+- Added gNMI Subscribe script for streaming telemetry
+- Heartbeat logging visible in ArgoCD UI
+- Updated ArgoCD to sync debug folder
+
+**Resources Added:**
+
+| Resource | Type | Purpose |
+|----------|------|---------|
+| network-debug | Pod | Interactive shell, SSH to switches, ping tests |
+| network-debug-scripts | ConfigMap | Helper scripts for Nokia/Arista SSH |
+
+**Debug Pod Features:**
+- Image: nicolaka/netshoot (SSH, ping, tcpdump, curl)
+- Heartbeat logs every 60s with ping latency to all switches
+- Visible in ArgoCD UI: Applications > sdc-network-configs > network-debug > Logs
+
+**gNMI Subscribe Script:**
+```bash
+# Stream interface statistics
+./scripts/gnmi-subscribe-logs.sh nokia-spine-1 interface
+
+# Stream BGP state
+./scripts/gnmi-subscribe-logs.sh nokia-spine-1 bgp --sample-interval 5
+
+# Single query
+./scripts/gnmi-subscribe-logs.sh arista-spine-1 system --once
+```
+
+**Subscription Types:** system, interface, cpu, memory, bgp, lldp
+
+**Heartbeat Sample Output:**
+```
+--- Heartbeat 2026-01-15T20:15:20+00:00 ---
+Nokia Switches:
+  172.40.40.11    OK (1.54ms)
+  172.40.40.12    OK (2.55ms)
+  172.40.40.21    OK (2.60ms)
+  172.40.40.22    OK (1.44ms)
+Arista Switches:
+  172.20.20.11    OK (0.284ms)
+  172.20.20.21    OK (0.250ms)
+  172.20.20.22    OK (0.230ms)
+```
+
+**Files Created:**
+- `clusters/kind-arista-lab/debug/network-debug-pod.yaml`
+- `scripts/gnmi-subscribe-logs.sh`
+- `scripts/README.md`
+
+**Commits:**
+- `40f39b1` feat(debug): add network debug pod and gNMI subscribe script
+- `7a94eb9` fix(argocd): remove include pattern for simpler sync
+- `ca20ffe` feat(debug): add heartbeat logging to network-debug pod
+
+---
 
 ### 2026-01-15 (Session 2): MAC-VRF Migration + Arista Topology
 
@@ -200,11 +262,25 @@ kubectl get targets -n sdc
 kubectl get configs -n sdc
 kubectl describe config <name> -n sdc
 
-# gNMI - Nokia
+# Debug Pod - Interactive Shell
+kubectl exec -it network-debug -n sdc -- bash
+
+# Debug Pod - SSH to Nokia
+kubectl exec -it network-debug -n sdc -- ssh -o StrictHostKeyChecking=no admin@172.40.40.11
+
+# Debug Pod - View heartbeat logs
+kubectl logs network-debug -n sdc -f
+
+# gNMI Subscribe - Interface streaming
+gnmic -a 172.40.40.11:57401 --insecure -u admin -p admin123 \
+  subscribe --path /interface[name=*]/statistics \
+  --stream-mode sample --sample-interval 5s
+
+# gNMI - Nokia (single query)
 gnmic -a 172.40.40.11:57401 --insecure -u admin -p admin123 \
   get --path /network-instance[name=vlan10] --type config
 
-# gNMI - Arista
+# gNMI - Arista (single query)
 gnmic -a 172.20.20.11:6030 --insecure -u admin -p admin \
   get --path /interfaces/interface[name=Ethernet1]/config
 
@@ -231,7 +307,8 @@ ping 192.168.10.2 network-instance default -c 3
 |----------|-------------|
 | `docs/diagrams/topology-arista-nokia.md` | Complete architecture and topology diagram |
 | `docs/SESSION_2026-01-15_GITOPS_SETUP.md` | Session 1 detailed notes |
+| `scripts/README.md` | Debug pod and gNMI subscribe usage guide |
 
 ---
 
-*Generated: 2026-01-15 19:35 UTC*
+*Generated: 2026-01-15 20:20 UTC*
