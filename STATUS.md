@@ -1,6 +1,6 @@
 # NetOps GitOps Status
 
-**Last Updated:** 2026-01-15 20:35 UTC
+**Last Updated:** 2026-01-15 21:10 UTC
 **Status:** OPERATIONAL
 
 ---
@@ -68,6 +68,95 @@ Status: FULL MESH CONNECTIVITY
 ---
 
 ## Recent Changes
+
+### 2026-01-15 (Session 5): Grafana Dashboard Improvements - BGP Status Visualization
+
+**Summary:**
+- Improved Grafana BGP Session States visualization
+- Fixed Flux query issues with InfluxDB datasource
+- Implemented semaphore-style colored tables for BGP status
+- External access to Grafana via socat proxy (same pattern as ArgoCD)
+
+**Grafana Dashboard Panels:**
+
+| Panel | Type | Data Source | Description |
+|-------|------|-------------|-------------|
+| Interface Traffic (Nokia) | timeseries | InfluxDB | in/out octets as bps |
+| Interface Traffic (Arista) | timeseries | InfluxDB | in/out octets as bps |
+| Nokia Spines BGP | table | InfluxDB | BGP status spine-1, spine-2 |
+| Nokia Leafs BGP | table | InfluxDB | BGP status leaf-1, leaf-2 |
+| CPU Utilization | timeseries | InfluxDB | System CPU % |
+| Memory Usage | timeseries | InfluxDB | System memory bytes |
+
+**BGP Status Tables (Semaphore Style):**
+
+```
+┌──────────────────────────────┐  ┌──────────────────────────────┐
+│     Nokia Spines BGP         │  │      Nokia Leafs BGP         │
+├──────────┬────────┬──────────┤  ├──────────┬────────┬──────────┤
+│  Switch  │  Peer  │  Status  │  │  Switch  │  Peer  │  Status  │
+├──────────┼────────┼──────────┤  ├──────────┼────────┼──────────┤
+│172.40.40.│10.0.x.x│ UP/DOWN  │  │172.40.40.│10.0.x.x│ UP/DOWN  │
+│  11/12   │        │ (colored)│  │  21/22   │        │ (colored)│
+└──────────┴────────┴──────────┘  └──────────┴────────┴──────────┘
+
+Status Colors:
+- Green (UP): established, active
+- Red (DOWN): idle
+- Yellow (CONNECTING): connect
+```
+
+**Technical Fixes Applied:**
+
+| Issue | Root Cause | Solution |
+|-------|------------|----------|
+| Table columns concatenated | Flux returns separate tables per tag | Added `group()` to merge |
+| Stat panel "No data" | String values incompatible with stat | Changed to table with color-background |
+| Datasource UID invalid | Template variable `${DS_INFLUXDB}` | Replaced with actual UID |
+| BGP query empty (5min) | on_change subscription, old data | Extended range to 1h |
+
+**Flux Query Pattern (Working):**
+
+```flux
+from(bucket: "network-telemetry")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r["_measurement"] == "bgp_neighbor")
+  |> filter(fn: (r) => r["_field"] == "session_state")
+  |> filter(fn: (r) => r["source"] =~ /172\.40\.40\.(11|12)/)  // Spines
+  |> last()
+  |> group()  // CRITICAL: merge tables
+  |> keep(columns: ["source", "peer_address", "_value"])
+  |> rename(columns: {source: "Switch", peer_address: "Peer", _value: "Status"})
+```
+
+**External Access (socat proxy):**
+
+```bash
+# Grafana proxy service (same pattern as ArgoCD)
+# File: /etc/systemd/system/grafana-proxy.service
+[Service]
+ExecStart=/usr/bin/socat TCP-LISTEN:30300,bind=0.0.0.0,fork,reuseaddr TCP:172.18.0.4:30300
+
+# Access
+http://10.251.12.84:30300 (admin/netops-grafana)
+```
+
+**Commits:**
+- `fae217a` fix(grafana): format BGP table with clean column names
+- `f42b03d` fix(grafana): use keep+rename for proper BGP table columns
+- `109562b` fix(grafana): add group() to merge BGP table rows
+- `d80f569` feat(grafana): semaphore-style BGP status panels
+- `54fdcb5` fix(grafana): simplify BGP stat queries with values:true
+- `27bed9b` fix(grafana): use tables with colored backgrounds for BGP status
+
+**Lessons Learned:**
+
+1. **Flux `group()` is essential**: Without it, each tag combination creates separate table
+2. **Stat panels + strings = problematic**: Use table with color-background for string states
+3. **on_change subscriptions**: Data only sent when state changes, use longer time ranges
+4. **Provisioned dashboards**: Cannot use template variables like `${DS_INFLUXDB}`
+
+---
 
 ### 2026-01-15 (Session 4): BGP Configs + Monitoring Stack (Telegraf/InfluxDB/Grafana)
 
@@ -357,6 +446,49 @@ ping 192.168.10.2 network-instance default -c 3
 3. **SDC target labels are immutable**: Must delete and recreate config to change target
 4. **ArgoCD prune option**: Essential for GitOps (removes configs deleted from Git)
 5. **IRB interface naming**: Nokia uses `irb0.N` format; N matches subinterface index
+6. **Nokia export-policy is array**: YANG model requires `export-policy: [policy-name]` not string
+7. **Telegraf gNMI TLS**: Use `insecure_skip_verify = true` directly, not nested `[inputs.gnmi.tls]`
+8. **Flux group() for tables**: Essential to merge separate Flux tables into single Grafana table
+9. **Grafana stat + strings**: Use table with color-background instead of stat panel for string values
+10. **on_change subscriptions**: Data sent only on state change; use longer time ranges (1h+)
+
+---
+
+## Next Steps (Roadmap)
+
+### Immediate (Next Session)
+
+| Task | Priority | Description |
+|------|----------|-------------|
+| Arista BGP Config | High | Add BGP configs for Arista switches (similar to Nokia) |
+| Dashboard Improvements | Medium | Add Arista interface status panel, LLDP neighbors |
+| Alerting | Medium | Configure Grafana alerts for BGP down, interface errors |
+
+### Short Term
+
+| Task | Priority | Description |
+|------|----------|-------------|
+| OSPF Configs | High | Add OSPF routing for Nokia underlay |
+| EVPN-VXLAN | High | Extend MAC-VRF to EVPN for multi-site L2 |
+| Prometheus Integration | Medium | Add Prometheus for alerting (AlertManager) |
+| Network Topology Panel | Low | Grafana topology visualization plugin |
+
+### Long Term
+
+| Task | Priority | Description |
+|------|----------|-------------|
+| CI/CD Pipeline | Medium | GitHub Actions for config validation before merge |
+| Config Backup | Medium | Periodic config backup to Git (diff detection) |
+| Capacity Planning | Low | Historical data analysis dashboards |
+| Multi-Cluster | Low | Extend GitOps to multiple SDC clusters |
+
+### Technical Debt
+
+| Item | Description |
+|------|-------------|
+| Hardcoded IPs | Move switch IPs to ConfigMap or Helm values |
+| Datasource UID | Use Grafana API to auto-discover UID |
+| Dashboard as Code | Consider Grafonnet for dashboard generation |
 
 ---
 
@@ -367,7 +499,23 @@ ping 192.168.10.2 network-instance default -c 3
 | `docs/diagrams/topology-arista-nokia.md` | Complete architecture and topology diagram |
 | `docs/SESSION_2026-01-15_GITOPS_SETUP.md` | Session 1 detailed notes |
 | `scripts/README.md` | Debug pod and gNMI subscribe usage guide |
+| `STATUS.md` | This file - current status and roadmap |
 
 ---
 
-*Generated: 2026-01-15 20:20 UTC*
+## Quick Access
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| ArgoCD | https://10.251.12.84:30443 | admin / JNtpkYEjCif1WrP4 |
+| Grafana | http://10.251.12.84:30300 | admin / netops-grafana |
+| GitHub | https://github.com/reinaldosaraiva/netops-gitops | - |
+
+| Switch SSH | Address | Credentials |
+|------------|---------|-------------|
+| Nokia | 172.40.40.x | admin / admin123 |
+| Arista | 172.20.20.x | admin / admin |
+
+---
+
+*Generated: 2026-01-15 21:10 UTC*
