@@ -140,7 +140,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> group(columns: [\"peer_address\", \"source\"])\n  |> last()\n  |> map(fn: (r) => ({ r with _field: r.source + \" -> \" + r.peer_address }))",
               "refId": "A"
             }
           ],
