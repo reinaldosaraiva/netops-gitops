@@ -34,9 +34,7 @@ data:
       password = "admin123"
       redial = "10s"
       tagexclude = ["path"]
-
-      [inputs.gnmi.tls]
-        insecure_skip_verify = true
+      insecure_skip_verify = true
 
       [[inputs.gnmi.subscription]]
         name = "interface_stats"
@@ -73,9 +71,7 @@ data:
       password = "admin"
       redial = "10s"
       tagexclude = ["path"]
-
-      [inputs.gnmi.tls]
-        insecure_skip_verify = true
+      insecure_skip_verify = true
 
       [[inputs.gnmi.subscription]]
         name = "arista_interface_counters"
