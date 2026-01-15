@@ -12,7 +12,7 @@ spec:
   - path: /
     value:
       interface:
-      - name: ethernet-1/1
+      - name: ethernet-1/49
         admin-state: enable
         vlan-tagging: true
         subinterface:
@@ -30,4 +30,4 @@ spec:
       network-instance:
       - name: default
         interface:
-        - name: ethernet-1/1.10
+        - name: ethernet-1/49.10
