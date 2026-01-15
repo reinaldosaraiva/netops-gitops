@@ -136,11 +136,11 @@ data:
           },
           "gridPos": { "h": 4, "w": 12, "x": 0, "y": 8 },
           "id": 3,
-          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true }, "textMode": "value_and_name" },
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(11|12)/)\n  |> last()\n  |> map(fn: (r) => ({r with _field: r.source + \" -> \" + r.peer_address}))",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(11|12)/)\n  |> last()\n  |> group()",
               "refId": "A"
             }
           ],
@@ -161,11 +161,11 @@ data:
           },
           "gridPos": { "h": 4, "w": 12, "x": 12, "y": 8 },
           "id": 6,
-          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": true }, "textMode": "value_and_name" },
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(21|22)/)\n  |> last()\n  |> map(fn: (r) => ({r with _field: r.source + \" -> \" + r.peer_address}))",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(21|22)/)\n  |> last()\n  |> group()",
               "refId": "A"
             }
           ],
