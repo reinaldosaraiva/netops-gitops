@@ -1,0 +1,140 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: influxdb-secrets
+  namespace: sdc
+  labels:
+    app: influxdb
+type: Opaque
+stringData:
+  admin-username: admin
+  admin-password: netops-admin-password
+  admin-token: netops-token-secret
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: influxdb-init
+  namespace: sdc
+  labels:
+    app: influxdb
+data:
+  init.sh: |
+    #!/bin/bash
+    set -e
+
+    # Wait for InfluxDB to start
+    until influx ping; do
+      echo "Waiting for InfluxDB..."
+      sleep 2
+    done
+
+    # Create bucket if not exists (handled by setup)
+    echo "InfluxDB initialized successfully"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: influxdb-pvc
+  namespace: sdc
+  labels:
+    app: influxdb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: influxdb
+  namespace: sdc
+  labels:
+    app: influxdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: influxdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: influxdb
+    spec:
+      containers:
+      - name: influxdb
+        image: influxdb:2.7-alpine
+        ports:
+        - containerPort: 8086
+          name: http
+        env:
+        - name: DOCKER_INFLUXDB_INIT_MODE
+          value: "setup"
+        - name: DOCKER_INFLUXDB_INIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-secrets
+              key: admin-username
+        - name: DOCKER_INFLUXDB_INIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-secrets
+              key: admin-password
+        - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-secrets
+              key: admin-token
+        - name: DOCKER_INFLUXDB_INIT_ORG
+          value: "netops"
+        - name: DOCKER_INFLUXDB_INIT_BUCKET
+          value: "network-telemetry"
+        - name: DOCKER_INFLUXDB_INIT_RETENTION
+          value: "7d"
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/influxdb2
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8086
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8086
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: influxdb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb
+  namespace: sdc
+  labels:
+    app: influxdb
+spec:
+  selector:
+    app: influxdb
+  ports:
+  - port: 8086
+    targetPort: 8086
+    name: http
+  type: ClusterIP

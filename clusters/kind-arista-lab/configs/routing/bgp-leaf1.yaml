@@ -1,0 +1,61 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: bgp-leaf1
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: nokia-leaf-1
+    config.sdcio.dev/targetNamespace: sdc
+    topology: spine-leaf
+    protocol: bgp
+spec:
+  priority: 20
+  config:
+  - path: /
+    value:
+      # BGP routing policy for export
+      routing-policy:
+        policy:
+        - name: export-loopback
+          default-action:
+            policy-result: reject
+          statement:
+          - name: accept-loopback
+            match:
+              prefix-set: loopbacks
+            action:
+              policy-result: accept
+        prefix-set:
+        - name: loopbacks
+          prefix:
+          - ip-prefix: 10.255.0.0/24
+            mask-length-range: 32..32
+      # BGP configuration in default network-instance
+      network-instance:
+      - name: default
+        protocols:
+          bgp:
+            admin-state: enable
+            autonomous-system: 65001
+            router-id: 10.255.0.11
+            afi-safi:
+            - afi-safi-name: ipv4-unicast
+              admin-state: enable
+            group:
+            - group-name: spines
+              admin-state: enable
+              export-policy: export-loopback
+              import-policy: accept-all
+              peer-as: 65000
+              afi-safi:
+              - afi-safi-name: ipv4-unicast
+                admin-state: enable
+            neighbor:
+            - peer-address: 10.0.1.0
+              admin-state: enable
+              peer-group: spines
+              description: "BGP to spine-1"
+            - peer-address: 10.0.3.0
+              admin-state: enable
+              peer-group: spines
+              description: "BGP to spine-2"
