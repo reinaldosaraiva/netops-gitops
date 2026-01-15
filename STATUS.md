@@ -109,7 +109,7 @@ Status: FULL MESH CONNECTIVITY
 
 1. **ArgoCD Setup**
    - Installed via manifests on KinD cluster
-   - Exposed via socat proxy (10.251.12.84:30443 -> 172.18.0.4:30443)
+   - Exposed via NodePort (30443) with optional proxy forwarding
    - Automated sync with prune enabled
 
 2. **BGP Migration (spine-2 <-> leaf-1)**
@@ -180,8 +180,8 @@ Status: FULL MESH CONNECTIVITY
 
 | Service | URL/Command | Credentials |
 |---------|-------------|-------------|
-| ArgoCD UI | https://10.251.12.84:30443 | admin / JNtpkYEjCif1WrP4 |
-| Server SSH | ssh failsafe@10.251.12.84 | Xj497scHQGaEiRv |
+| ArgoCD UI | https://<server-ip>:30443 | See local credentials |
+| Server SSH | Contact admin for access | - |
 | GitHub Repo | https://github.com/reinaldosaraiva/netops-gitops | - |
 | Arista SSH | ssh admin@172.20.20.x | admin |
 | Nokia SSH | ssh admin@172.40.40.x | admin123 |

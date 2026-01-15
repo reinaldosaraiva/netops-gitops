@@ -60,8 +60,8 @@ clusters/
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| ArgoCD UI | https://10.251.12.84:30443 | admin / JNtpkYEjCif1WrP4 |
-| Server SSH | ssh failsafe@10.251.12.84 | Xj497scHQGaEiRv |
+| ArgoCD UI | https://<server-ip>:30443 | See local credentials |
+| Server SSH | Contact admin for access | - |
 
 ## ConfigSet Examples
 

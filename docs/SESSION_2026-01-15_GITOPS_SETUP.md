@@ -119,9 +119,9 @@ WantedBy=multi-user.target
 **Acesso:**
 | Campo | Valor |
 |-------|-------|
-| URL | https://10.251.12.84:30443 |
+| URL | https://<server-ip>:30443 |
 | Username | admin |
-| Password | JNtpkYEjCif1WrP4 |
+| Password | See local credentials |
 
 ### 2. Repositorio GitOps
 
