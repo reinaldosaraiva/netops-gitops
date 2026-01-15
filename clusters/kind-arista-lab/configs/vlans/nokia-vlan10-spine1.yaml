@@ -13,8 +13,7 @@ spec:
     value:
       interface:
       - name: ethernet-1/1
-        admin-state: enable
-        vlan-tagging: true
+        # vlan-tagging already enabled via BGP migration
         subinterface:
         - index: 10
           admin-state: enable

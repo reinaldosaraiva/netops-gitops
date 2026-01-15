@@ -12,9 +12,8 @@ spec:
   - path: /
     value:
       interface:
-      - name: ethernet-1/49
-        admin-state: enable
-        vlan-tagging: true
+      - name: ethernet-1/50
+        # vlan-tagging already enabled via BGP migration
         subinterface:
         - index: 10
           admin-state: enable
@@ -30,4 +29,4 @@ spec:
       network-instance:
       - name: default
         interface:
-        - name: ethernet-1/49.10
+        - name: ethernet-1/50.10
