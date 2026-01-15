@@ -141,7 +141,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()\n  |> map(fn: (r) => ({Switch: r.source, Peer: r.peer_address, State: r._value}))",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()\n  |> keep(columns: [\"source\", \"peer_address\", \"_value\"])\n  |> rename(columns: {source: \"Switch\", peer_address: \"Peer\", _value: \"State\"})",
               "refId": "A"
             }
           ],
