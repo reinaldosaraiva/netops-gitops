@@ -90,21 +90,12 @@ Status: FULL MESH CONNECTIVITY
 
 **BGP Status Tables (Semaphore Style):**
 
-```
-┌──────────────────────────────┐  ┌──────────────────────────────┐
-│     Nokia Spines BGP         │  │      Nokia Leafs BGP         │
-├──────────┬────────┬──────────┤  ├──────────┬────────┬──────────┤
-│  Switch  │  Peer  │  Status  │  │  Switch  │  Peer  │  Status  │
-├──────────┼────────┼──────────┤  ├──────────┼────────┼──────────┤
-│172.40.40.│10.0.x.x│ UP/DOWN  │  │172.40.40.│10.0.x.x│ UP/DOWN  │
-│  11/12   │        │ (colored)│  │  21/22   │        │ (colored)│
-└──────────┴────────┴──────────┘  └──────────┴────────┴──────────┘
+See diagram: [`docs/diagrams/gitops-bgp-monitoring-whiteboard.md`](docs/diagrams/gitops-bgp-monitoring-whiteboard.md)
 
-Status Colors:
-- Green (UP): established, active
-- Red (DOWN): idle
-- Yellow (CONNECTING): connect
-```
+| Panel | Columns | Color Logic |
+|-------|---------|-------------|
+| Nokia Spines BGP | Switch, Peer, Status | green=UP, red=DOWN |
+| Nokia Leafs BGP | Switch, Peer, Status | green=UP, red=DOWN |
 
 **Technical Fixes Applied:**
 
@@ -338,29 +329,18 @@ Arista Switches:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     GitOps Pipeline                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  GitHub ──────► ArgoCD ──────► SDC ──────► Switches            │
-│  (Source)      (Sync)        (gNMI)      (Config)              │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+![GitOps Pipeline](docs/diagrams/gitops-pipeline.png)
+
+**Pipeline:** GitHub → ArgoCD → SDC → Switches (via gNMI)
 
 ### Lab Topology
 
-```
-        ARISTA LAB (172.20.20.0/24)          NOKIA LAB (172.40.40.0/24)
+![Lab Topology](docs/diagrams/lab-topology.png)
 
-              SPINE-1                        SPINE-1      SPINE-2
-             (.20.11)                        (.40.11)     (.40.12)
-              /    \                            |     \  /    |
-             /      \                           |      \/     |
-          LEAF-1  LEAF-2                     LEAF-1 ───────LEAF-2
-         (.20.21) (.20.22)                  (.40.21)      (.40.22)
-```
+| Lab | Subnet | Switches |
+|-----|--------|----------|
+| Arista | 172.20.20.0/24 | spine-1, leaf-1, leaf-2 |
+| Nokia | 172.40.40.0/24 | spine-1, spine-2, leaf-1, leaf-2 |
 
 ### Targets
 
@@ -496,7 +476,10 @@ ping 192.168.10.2 network-instance default -c 3
 
 | Document | Description |
 |----------|-------------|
-| `docs/diagrams/topology-arista-nokia.md` | Complete architecture and topology diagram |
+| `docs/diagrams/gitops-pipeline.png` | GitOps pipeline diagram (Kroki) |
+| `docs/diagrams/lab-topology.png` | Lab topology diagram (Kroki) |
+| `docs/diagrams/monitoring-flow.png` | Monitoring flow diagram (Kroki) |
+| `docs/diagrams/gitops-bgp-monitoring-whiteboard.md` | Detailed whiteboard documentation |
 | `docs/SESSION_2026-01-15_GITOPS_SETUP.md` | Session 1 detailed notes |
 | `scripts/README.md` | Debug pod and gNMI subscribe usage guide |
 | `STATUS.md` | This file - current status and roadmap |
