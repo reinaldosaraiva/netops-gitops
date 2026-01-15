@@ -44,8 +44,8 @@ spec:
             group:
             - group-name: leafs
               admin-state: enable
-              export-policy: export-loopback
-              import-policy: accept-all
+              export-policy:
+              - export-loopback
               peer-as: 65001
               afi-safi:
               - afi-safi-name: ipv4-unicast
