@@ -1,0 +1,34 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: arista-spine1-topology
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: spine-1-arista
+    config.sdcio.dev/targetNamespace: sdc
+    topology: spine-leaf
+    role: spine
+spec:
+  priority: 15
+  config:
+  - path: /
+    value:
+      # Interface descriptions with topology info
+      interfaces:
+        interface:
+        - name: Ethernet1
+          config:
+            description: "[SPINE-1] Downlink to LEAF-1 Eth1 | 10G"
+            enabled: true
+        - name: Ethernet2
+          config:
+            description: "[SPINE-1] Downlink to LEAF-2 Eth1 | 10G"
+            enabled: true
+        - name: Management1
+          config:
+            description: "[MGMT] OOB Management | 172.20.20.11"
+      # System hostname
+      system:
+        config:
+          hostname: SPINE-1-ARISTA
+          domain-name: lab.local

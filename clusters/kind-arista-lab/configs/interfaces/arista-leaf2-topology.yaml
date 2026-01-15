@@ -1,0 +1,30 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: arista-leaf2-topology
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: leaf-2-arista
+    config.sdcio.dev/targetNamespace: sdc
+    topology: spine-leaf
+    role: leaf
+spec:
+  priority: 15
+  config:
+  - path: /
+    value:
+      # Interface descriptions with topology info
+      interfaces:
+        interface:
+        - name: Ethernet1
+          config:
+            description: "[LEAF-2] Uplink to SPINE-1 Eth2 | 10G"
+            enabled: true
+        - name: Management1
+          config:
+            description: "[MGMT] OOB Management | 172.20.20.22"
+      # System hostname
+      system:
+        config:
+          hostname: LEAF-2-ARISTA
+          domain-name: lab.local
