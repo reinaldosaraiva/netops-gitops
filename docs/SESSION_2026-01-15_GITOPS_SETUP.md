@@ -2,7 +2,7 @@
 
 **Data:** 2026-01-15
 **Objetivo:** Implementar GitOps para gerenciamento de configuracoes de rede SDC/Kubenet
-**Status:** COMPLETE (com excecao documentada)
+**Status:** COMPLETE (100% - todas configs Ready)
 
 ---
 
@@ -17,10 +17,12 @@ Implementacao bem-sucedida de workflow GitOps para automacao de rede usando:
 
 | Metrica | Valor |
 |---------|-------|
-| Configs gerenciados via GitOps | 7 |
+| Configs gerenciados via GitOps | 11 |
 | Targets SDC operacionais | 7/7 |
+| Configs Ready | 11/11 |
 | Tempo de setup ArgoCD | ~5 minutos |
 | Sync automatico | Habilitado |
+| BGP Migration | COMPLETE |
 
 ---
 
@@ -249,9 +251,9 @@ spec:
 
 ---
 
-## Problema Identificado: nokia-spine-2
+## Problema Resolvido: nokia-spine-2 (BGP Migration)
 
-### Sintoma
+### Sintoma Original
 Config `vlan10-subinterface-spine2` com status `Unrecoverable`
 
 ### Causa Raiz
@@ -259,9 +261,39 @@ Config `vlan10-subinterface-spine2` com status `Unrecoverable`
 Error: vlan tagging true inconsistent with subinterface 0
 ```
 
-O switch `nokia-spine-2` possui `subinterface 0` em `ethernet-1/1` com IP 10.0.3.0/31 (usado para BGP P2P). Nokia SR Linux nao permite `vlan-tagging: true` quando existe `subinterface 0` (untagged).
+O switch `nokia-spine-2` possuia `subinterface 0` em `ethernet-1/1` com IP 10.0.3.0/31 (usado para BGP P2P). Nokia SR Linux nao permite `vlan-tagging: true` quando existe `subinterface 0` (untagged).
 
-### Topologia Atual
+### Solucao Implementada
+
+**Abordagem:** Migracao atomica do BGP de subinterface 0 para subinterface 1 com VLAN tag.
+
+**Passos executados:**
+
+1. **Remover config SDC temporariamente** (evitar conflito de sessao exclusiva)
+   ```bash
+   kubectl delete config vlan10-subinterface-spine2 -n sdc
+   ```
+
+2. **Migrar BGP no leaf-1** (ethernet-1/50)
+   ```bash
+   gnmic set --delete /interface[name=ethernet-1/50]/subinterface[index=0] \
+     --update /interface[name=ethernet-1/50]/vlan-tagging=true \
+     --update /interface[name=ethernet-1/50]/subinterface[index=1]/...
+   ```
+
+3. **Migrar BGP no spine-2** (ethernet-1/1)
+   ```bash
+   gnmic set --delete /interface[name=ethernet-1/1]/subinterface[index=0] \
+     --update /interface[name=ethernet-1/1]/vlan-tagging=true \
+     --update /interface[name=ethernet-1/1]/subinterface[index=1]/...
+   ```
+
+4. **Restaurar config via GitOps**
+   - Commit novo nokia-vlan10-spine2.yaml
+   - ArgoCD sync automatico
+   - SDC aplica config com sucesso
+
+### Topologia Apos Migracao
 
 ```
                 nokia-spine-1
@@ -271,24 +303,24 @@ O switch `nokia-spine-2` possui `subinterface 0` em `ethernet-1/1` com IP 10.0.3
               |       |        |
               |   10.0.1.x  10.0.2.x
               |       |        |
-          e1/1.10  e1/1.0   e1/1.0
+          e1/1.10  e1/50.1  e1/1.0
          (VLAN10)  (BGP)    (BGP)
               |       |        |
         nokia-leaf-1  |   nokia-leaf-2
                       |
                nokia-spine-2
-                  e1/1.0 ← CONFLITO!
-                 (BGP 10.0.3.0/31)
+                  e1/1.1 ← VLAN tag 1 (BGP)
+                  e1/1.10 ← VLAN 10 (SDC)
+                 (10.0.3.0/31)
 ```
 
-### Solucao Proposta
+### Resultado
 
-Migrar BGP do `nokia-spine-2` de `ethernet-1/1` para `ethernet-1/2`:
+| Config | Status Antes | Status Depois |
+|--------|--------------|---------------|
+| vlan10-subinterface-spine2 | Unrecoverable | Ready |
 
-1. Criar nova subinterface em ethernet-1/2 para BGP
-2. Atualizar configuracao BGP para usar novo IP
-3. Remover subinterface 0 de ethernet-1/1
-4. Aplicar VLAN 10 em ethernet-1/1
+**Todos os 11 configs agora estao Ready.**
 
 ---
 
@@ -355,24 +387,25 @@ argocd app sync sdc-network-configs
 
 ## Proximos Passos
 
-1. **Resolver conflito nokia-spine-2**
-   - Migrar BGP para ethernet-1/2
-   - Aplicar VLAN 10 em ethernet-1/1
-
-2. **Expandir configuracoes**
+1. **Expandir configuracoes** (Prioridade Alta)
    - Adicionar configs de BGP via GitOps
-   - Adicionar configs de VLANs adicionais
+   - Adicionar configs de VLANs adicionais (20, 30)
    - Implementar configs de ACLs
 
-3. **Melhorias de seguranca**
+2. **Melhorias de seguranca** (Prioridade Media)
    - Configurar branch protection no GitHub
    - Implementar code review obrigatorio
-   - Adicionar validacao de YAML pre-commit
+   - Adicionar validacao de YAML pre-commit (yamllint, kube-linter)
 
-4. **Monitoramento**
-   - Configurar alertas ArgoCD
+3. **Monitoramento** (Prioridade Media)
+   - Configurar alertas ArgoCD (Slack/Teams)
    - Dashboard de status dos configs
    - Metricas de drift detection
+
+4. **Automacao Avancada** (Prioridade Baixa)
+   - CI/CD para validacao de configs
+   - Testes automatizados de conectividade
+   - Rollback automatico em caso de falha
 
 ---
 
@@ -395,4 +428,5 @@ Usar `directory.recurse: true` no Application para sincronizar subdiretorios aut
 ---
 
 **Documentado por:** Claude Code
-**Ultima atualizacao:** 2026-01-15 18:30 UTC
+**Ultima atualizacao:** 2026-01-15 18:20 UTC
+**BGP Migration completada:** 2026-01-15 18:17 UTC
