@@ -1,6 +1,6 @@
 # NetOps GitOps Status
 
-**Last Updated:** 2026-01-15 20:20 UTC
+**Last Updated:** 2026-01-15 20:35 UTC
 **Status:** OPERATIONAL
 
 ---
@@ -9,9 +9,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Resources Managed via GitOps | 12 |
-| SDC Configs (Ready) | 10/10 |
+| Resources Managed via GitOps | 26 |
+| SDC Configs (Ready) | 14/14 |
 | SDC Targets (Ready) | 7/7 |
+| Monitoring Stack | Telegraf + InfluxDB + Grafana |
 | Debug Pod | Running (heartbeat logs) |
 | ArgoCD Sync Status | Synced |
 | GitHub Repo | https://github.com/reinaldosaraiva/netops-gitops |
@@ -40,6 +41,15 @@
 | macvrf-vlan10-leaf1 | nokia-leaf-1 | 192.168.10.11/24 | Ready |
 | macvrf-vlan10-leaf2 | nokia-leaf-2 | 192.168.10.12/24 | Ready |
 
+### Nokia SR Linux (Native YANG) - BGP Underlay
+
+| Config | Target | AS | Router-ID | Status |
+|--------|--------|----|-----------| -------|
+| bgp-spine1 | nokia-spine-1 | 65000 | 10.255.0.1 | Ready |
+| bgp-spine2 | nokia-spine-2 | 65000 | 10.255.0.2 | Ready |
+| bgp-leaf1 | nokia-leaf-1 | 65001 | 10.255.0.11 | Ready |
+| bgp-leaf2 | nokia-leaf-2 | 65002 | 10.255.0.12 | Ready |
+
 ---
 
 ## VLAN 10 Connectivity Matrix
@@ -58,6 +68,55 @@ Status: FULL MESH CONNECTIVITY
 ---
 
 ## Recent Changes
+
+### 2026-01-15 (Session 4): BGP Configs + Monitoring Stack (Telegraf/InfluxDB/Grafana)
+
+**Summary:**
+- Added BGP configs for all 4 Nokia switches via GitOps
+- Deployed full monitoring stack: Telegraf, InfluxDB, Grafana
+- Telegraf collecting gNMI telemetry from all 7 switches
+- Grafana dashboard available at NodePort 30300
+
+**BGP Configs Created:**
+
+| Config | AS | Peers | Status |
+|--------|----|----- -|--------|
+| bgp-spine1 | 65000 | leaf-1 (10.0.1.1) | Ready |
+| bgp-spine2 | 65000 | leaf-1 (10.0.3.1), leaf-2 (10.0.4.1) | Ready |
+| bgp-leaf1 | 65001 | spine-1 (10.0.1.0), spine-2 (10.0.3.0) | Ready |
+| bgp-leaf2 | 65002 | spine-2 (10.0.4.0) | Ready |
+
+**Monitoring Stack:**
+
+| Component | Image | Status | Access |
+|-----------|-------|--------|--------|
+| Telegraf | telegraf:1.29-alpine | Running | gNMI collector |
+| InfluxDB | influxdb:2.7-alpine | Running | ClusterIP:8086 |
+| Grafana | grafana/grafana:10.3.1 | Running | NodePort:30300 |
+
+**Telegraf gNMI Subscriptions:**
+
+| Target | Subscriptions |
+|--------|---------------|
+| Nokia (4 switches) | interface_stats, interface_oper_state, bgp_neighbor, system_cpu, system_memory |
+| Arista (3 switches) | arista_interface_counters, arista_interface_state, arista_system |
+
+**Access Credentials:**
+- Grafana: http://<server-ip>:30300 (admin/netops-grafana)
+- InfluxDB: org=netops, bucket=network-telemetry, token=netops-token-secret
+
+**Files Created:**
+- `clusters/kind-arista-lab/configs/routing/bgp-*.yaml` (4 files)
+- `clusters/kind-arista-lab/monitoring/telegraf.yaml`
+- `clusters/kind-arista-lab/monitoring/influxdb.yaml`
+- `clusters/kind-arista-lab/monitoring/grafana.yaml`
+
+**Commits:**
+- `0d1e1b3` feat(sdc): add BGP configs and monitoring stack (Telegraf/InfluxDB/Grafana)
+- `a4e19dc` fix(bgp): use array for export-policy (Nokia SR Linux YANG)
+- `8bc1271` fix(telegraf): correct gNMI TLS config syntax
+
+---
 
 ### 2026-01-15 (Session 3): Debug Pod + gNMI Subscribe Monitoring
 
