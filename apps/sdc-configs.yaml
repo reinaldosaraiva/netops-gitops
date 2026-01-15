@@ -13,7 +13,6 @@ spec:
     path: clusters/kind-arista-lab
     directory:
       recurse: true
-      include: '{configs/**/*,debug/**/*}'
   destination:
     server: https://kubernetes.default.svc
     namespace: sdc
