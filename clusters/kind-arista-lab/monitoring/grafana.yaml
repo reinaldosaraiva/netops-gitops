@@ -127,26 +127,50 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
-              "custom": { "align": "center", "cellOptions": { "type": "color-text" }, "inspect": false },
               "mappings": [
-                { "options": { "established": { "color": "green", "index": 0, "text": "ESTABLISHED" }, "active": { "color": "yellow", "index": 1, "text": "ACTIVE" }, "idle": { "color": "red", "index": 2, "text": "IDLE" }, "connect": { "color": "blue", "index": 3, "text": "CONNECT" } }, "type": "value" }
+                { "options": { "established": { "color": "green", "index": 0, "text": "UP" }, "active": { "color": "green", "index": 1, "text": "UP" }, "idle": { "color": "red", "index": 2, "text": "DOWN" }, "connect": { "color": "yellow", "index": 3, "text": "CONNECTING" } }, "type": "value" }
               ],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] }
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
             },
             "overrides": []
           },
-          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 8 },
+          "gridPos": { "h": 4, "w": 12, "x": 0, "y": 8 },
           "id": 3,
-          "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false }, "sortBy": [{ "displayName": "source" }] },
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()\n  |> group()\n  |> keep(columns: [\"source\", \"peer_address\", \"_value\"])\n  |> rename(columns: {source: \"Switch\", peer_address: \"Peer\", _value: \"State\"})",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(11|12)/)\n  |> last()\n  |> map(fn: (r) => ({r with _field: r.source + \" -> \" + r.peer_address}))",
               "refId": "A"
             }
           ],
-          "title": "BGP Session States",
-          "type": "table"
+          "title": "Nokia Spines BGP",
+          "type": "stat"
+        },
+        {
+          "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [
+                { "options": { "established": { "color": "green", "index": 0, "text": "UP" }, "active": { "color": "green", "index": 1, "text": "UP" }, "idle": { "color": "red", "index": 2, "text": "DOWN" }, "connect": { "color": "yellow", "index": 3, "text": "CONNECTING" } }, "type": "value" }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 8 },
+          "id": 6,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+          "targets": [
+            {
+              "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> filter(fn: (r) => r[\"source\"] =~ /172\\.40\\.40\\.(21|22)/)\n  |> last()\n  |> map(fn: (r) => ({r with _field: r.source + \" -> \" + r.peer_address}))",
+              "refId": "A"
+            }
+          ],
+          "title": "Nokia Leafs BGP",
+          "type": "stat"
         },
         {
           "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
