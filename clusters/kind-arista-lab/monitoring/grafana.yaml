@@ -127,25 +127,26 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
+              "custom": { "align": "center", "cellOptions": { "type": "color-text" }, "inspect": false },
               "mappings": [
-                { "options": { "established": { "color": "green", "index": 0, "text": "ESTABLISHED" }, "active": { "color": "yellow", "index": 1, "text": "ACTIVE" }, "idle": { "color": "red", "index": 2, "text": "IDLE" } }, "type": "value" }
+                { "options": { "established": { "color": "green", "index": 0, "text": "ESTABLISHED" }, "active": { "color": "yellow", "index": 1, "text": "ACTIVE" }, "idle": { "color": "red", "index": 2, "text": "IDLE" }, "connect": { "color": "blue", "index": 3, "text": "CONNECT" } }, "type": "value" }
               ],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] }
             },
             "overrides": []
           },
           "gridPos": { "h": 6, "w": 24, "x": 0, "y": 8 },
           "id": 3,
-          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+          "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false }, "sortBy": [{ "displayName": "source" }] },
           "targets": [
             {
               "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
-              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()",
+              "query": "from(bucket: \"network-telemetry\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"bgp_neighbor\")\n  |> filter(fn: (r) => r[\"_field\"] == \"session_state\")\n  |> last()\n  |> keep(columns: [\"source\", \"peer_address\", \"_value\"])",
               "refId": "A"
             }
           ],
           "title": "BGP Session States",
-          "type": "stat"
+          "type": "table"
         },
         {
           "datasource": { "type": "influxdb", "uid": "P951FEA4DE68E13C5" },
