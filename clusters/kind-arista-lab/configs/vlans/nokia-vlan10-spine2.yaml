@@ -13,12 +13,20 @@ spec:
     value:
       interface:
       - name: ethernet-1/1
-        # vlan-tagging is already enabled via BGP migration
+        # vlan-tagging already enabled via BGP migration
         subinterface:
         - index: 10
           admin-state: enable
           type: routed
+          ipv4:
+            admin-state: enable
+            address:
+            - ip-prefix: 192.168.10.2/24
           vlan:
             encap:
               single-tagged:
                 vlan-id: 10
+      network-instance:
+      - name: default
+        interface:
+        - name: ethernet-1/1.10
