@@ -11,8 +11,44 @@ spec:
   - name: netshoot
     image: nicolaka/netshoot:latest
     command:
-    - sleep
-    - "infinity"
+    - /bin/sh
+    - -c
+    - |
+      echo "=========================================="
+      echo "Network Debug Pod Started"
+      echo "Time: $(date -Iseconds)"
+      echo "Hostname: $(hostname)"
+      echo "=========================================="
+      echo ""
+      echo "Available switches:"
+      echo "  Nokia:  172.40.40.11-12 (spine), 172.40.40.21-22 (leaf)"
+      echo "  Arista: 172.20.20.11 (spine), 172.20.20.21-22 (leaf)"
+      echo ""
+      echo "Starting heartbeat monitor (60s interval)..."
+      echo ""
+      while true; do
+        echo "--- Heartbeat $(date -Iseconds) ---"
+        echo "Nokia Switches:"
+        for ip in 172.40.40.11 172.40.40.12 172.40.40.21 172.40.40.22; do
+          latency=$(ping -c 1 -W 2 $ip 2>/dev/null | grep 'time=' | sed 's/.*time=\([0-9.]*\).*/\1/')
+          if [ -n "$latency" ]; then
+            printf "  %-15s OK (%sms)\n" "$ip" "$latency"
+          else
+            printf "  %-15s FAIL\n" "$ip"
+          fi
+        done
+        echo "Arista Switches:"
+        for ip in 172.20.20.11 172.20.20.21 172.20.20.22; do
+          latency=$(ping -c 1 -W 2 $ip 2>/dev/null | grep 'time=' | sed 's/.*time=\([0-9.]*\).*/\1/')
+          if [ -n "$latency" ]; then
+            printf "  %-15s OK (%sms)\n" "$ip" "$latency"
+          else
+            printf "  %-15s FAIL\n" "$ip"
+          fi
+        done
+        echo ""
+        sleep 60
+      done
     resources:
       limits:
         memory: "256Mi"
