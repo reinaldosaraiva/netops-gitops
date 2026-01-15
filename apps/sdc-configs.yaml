@@ -10,9 +10,10 @@ spec:
   source:
     repoURL: https://github.com/reinaldosaraiva/netops-gitops.git
     targetRevision: main
-    path: clusters/kind-arista-lab/configs
+    path: clusters/kind-arista-lab
     directory:
       recurse: true
+      include: '{configs/**/*,debug/**/*}'
   destination:
     server: https://kubernetes.default.svc
     namespace: sdc
