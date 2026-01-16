@@ -20,6 +20,7 @@ spec:
         - name: Vlan10
           config:
             name: Vlan10
+            type: ianaift:l3ipvlan
             description: "[SVI] VLAN10 Data Gateway"
             enabled: true
           routed-vlan:
@@ -38,6 +39,7 @@ spec:
         - name: Vlan20
           config:
             name: Vlan20
+            type: ianaift:l3ipvlan
             description: "[SVI] VLAN20 Voice Gateway"
             enabled: true
           routed-vlan:
@@ -56,6 +58,7 @@ spec:
         - name: Vlan30
           config:
             name: Vlan30
+            type: ianaift:l3ipvlan
             description: "[SVI] VLAN30 Management Gateway"
             enabled: true
           routed-vlan:
