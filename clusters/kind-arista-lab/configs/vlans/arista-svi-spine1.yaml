@@ -1,0 +1,72 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: arista-svi-spine1
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: spine-1-arista
+    config.sdcio.dev/targetNamespace: sdc
+    feature: svi
+    purpose: l3-gateway
+spec:
+  priority: 35
+  config:
+  - path: /
+    value:
+      # SVI interfaces for L3 gateway (inter-VLAN routing)
+      interfaces:
+        interface:
+        # VLAN 10 SVI - Data Network
+        - name: Vlan10
+          config:
+            name: Vlan10
+            description: "[SVI] VLAN10 Data Gateway"
+            enabled: true
+          routed-vlan:
+            config:
+              vlan: 10
+            ipv4:
+              addresses:
+                address:
+                - ip: 192.168.10.1
+                  config:
+                    ip: 192.168.10.1
+                    prefix-length: 24
+              config:
+                enabled: true
+        # VLAN 20 SVI - Voice Network
+        - name: Vlan20
+          config:
+            name: Vlan20
+            description: "[SVI] VLAN20 Voice Gateway"
+            enabled: true
+          routed-vlan:
+            config:
+              vlan: 20
+            ipv4:
+              addresses:
+                address:
+                - ip: 192.168.20.1
+                  config:
+                    ip: 192.168.20.1
+                    prefix-length: 24
+              config:
+                enabled: true
+        # VLAN 30 SVI - Management Network
+        - name: Vlan30
+          config:
+            name: Vlan30
+            description: "[SVI] VLAN30 Management Gateway"
+            enabled: true
+          routed-vlan:
+            config:
+              vlan: 30
+            ipv4:
+              addresses:
+                address:
+                - ip: 192.168.30.1
+                  config:
+                    ip: 192.168.30.1
+                    prefix-length: 24
+              config:
+                enabled: true
