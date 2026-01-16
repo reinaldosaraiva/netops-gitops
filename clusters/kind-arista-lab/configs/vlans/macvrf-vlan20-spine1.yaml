@@ -1,0 +1,50 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: macvrf-vlan20-spine1
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: nokia-spine-1
+    config.sdcio.dev/targetNamespace: sdc
+    vlan: "20"
+    purpose: voice
+spec:
+  priority: 30
+  config:
+  - path: /
+    value:
+      # 1. Physical interface with vlan-tagging
+      interface:
+      - name: ethernet-1/1
+        admin-state: enable
+        vlan-tagging: true
+        subinterface:
+        - index: 20
+          admin-state: enable
+          type: bridged
+          vlan:
+            encap:
+              single-tagged:
+                vlan-id: 20
+      # 2. IRB interface for L3 gateway
+      - name: irb0
+        admin-state: enable
+        subinterface:
+        - index: 20
+          admin-state: enable
+          ipv4:
+            admin-state: enable
+            address:
+            - ip-prefix: 192.168.20.1/24
+      # 3. MAC-VRF network-instance
+      network-instance:
+      - name: vlan20
+        type: mac-vrf
+        admin-state: enable
+        interface:
+        - name: ethernet-1/1.20
+        - name: irb0.20
+      # 4. Add IRB to default for routing
+      - name: default
+        interface:
+        - name: irb0.20

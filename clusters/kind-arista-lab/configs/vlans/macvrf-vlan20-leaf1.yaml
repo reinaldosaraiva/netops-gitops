@@ -1,0 +1,48 @@
+apiVersion: config.sdcio.dev/v1alpha1
+kind: Config
+metadata:
+  name: macvrf-vlan20-leaf1
+  namespace: sdc
+  labels:
+    config.sdcio.dev/targetName: nokia-leaf-1
+    config.sdcio.dev/targetNamespace: sdc
+    vlan: "20"
+    purpose: voice
+spec:
+  priority: 30
+  config:
+  - path: /
+    value:
+      # 1. Uplink interface with vlan-tagging
+      interface:
+      - name: ethernet-1/50
+        admin-state: enable
+        vlan-tagging: true
+        subinterface:
+        - index: 20
+          admin-state: enable
+          type: bridged
+          vlan:
+            encap:
+              single-tagged:
+                vlan-id: 20
+      # 2. Access interface for hosts
+      - name: ethernet-1/1
+        admin-state: enable
+        vlan-tagging: true
+        subinterface:
+        - index: 20
+          admin-state: enable
+          type: bridged
+          vlan:
+            encap:
+              single-tagged:
+                vlan-id: 20
+      # 3. MAC-VRF network-instance
+      network-instance:
+      - name: vlan20
+        type: mac-vrf
+        admin-state: enable
+        interface:
+        - name: ethernet-1/50.20
+        - name: ethernet-1/1.20
