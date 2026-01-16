@@ -13,7 +13,7 @@ spec:
   config:
   - path: /
     value:
-      # 1. VLAN definition in network-instance
+      # 1. VLAN definition
       network-instances:
         network-instance:
         - name: default
@@ -24,30 +24,9 @@ spec:
                 vlan-id: 30
                 name: MANAGEMENT
                 status: ACTIVE
-      # 2. SVI interface for L3 gateway
+      # 2. Trunk port to leafs
       interfaces:
         interface:
-        - name: Vlan30
-          config:
-            description: "[VLAN30] Management Network Gateway"
-            enabled: true
-            type: l3ipvlan
-          routed-vlan:
-            config:
-              vlan: 30
-          subinterfaces:
-            subinterface:
-            - index: 0
-              ipv4:
-                addresses:
-                  address:
-                  - ip: 192.168.30.1
-                    config:
-                      ip: 192.168.30.1
-                      prefix-length: 24
-                config:
-                  enabled: true
-        # 3. Trunk port to leafs
         - name: Ethernet1
           ethernet:
             switched-vlan:
